@@ -1,15 +1,25 @@
 const auditService = require("../services/auditService");
-const concurrency = require("../middleware/concurrency");
+
+let activeRequests = 0;
+const MAX_CONCURRENT = 5;
 
 exports.auditUrl = async (req, res) => {
 
+    if (activeRequests >= MAX_CONCURRENT) {
+        return res.status(429).json({
+            success: false,
+            error: {
+                code: "TOO_MANY_CONCURRENT_REQUESTS",
+                message: "Server is busy. Please try again shortly."
+            }
+        });
+    }
+
+    activeRequests++;
+
     try {
 
-        const { url } = req.body;
-
-        const result = await concurrency(() =>
-            auditService.auditWebsite(url)
-        );
+        const result = await auditService.auditWebsite(req.body.url);
 
         res.json({
             success: true,
@@ -18,19 +28,18 @@ exports.auditUrl = async (req, res) => {
 
     } catch (error) {
 
-        const status =
-            error.message === "Request timed out" ? 408 : 500;
+        const status = error.message === "Request timed out" ? 408 : 500;
 
         res.status(status).json({
             success: false,
             error: {
-                code: status === 408
-                    ? "REQUEST_TIMEOUT"
-                    : "AUDIT_FAILED",
+                code: status === 408 ? "REQUEST_TIMEOUT" : "AUDIT_FAILED",
                 message: error.message
             }
         });
 
+    } finally {
+        activeRequests--;
     }
 
 };
