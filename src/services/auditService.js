@@ -5,12 +5,11 @@ const REQUEST_TIMEOUT = 5000;
 
 exports.auditWebsite = async (url) => {
 
-    // Check cache first
-    const cached = cache.get(url);
+    const cachedResult = cache.get(url);
 
-    if (cached) {
+    if (cachedResult) {
         return {
-            ...cached,
+            ...cachedResult,
             cached: true
         };
     }

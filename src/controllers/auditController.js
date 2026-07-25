@@ -1,4 +1,5 @@
 const auditService = require("../services/auditService");
+const concurrency = require("../middleware/concurrency");
 
 exports.auditUrl = async (req, res) => {
 
@@ -6,40 +7,29 @@ exports.auditUrl = async (req, res) => {
 
         const { url } = req.body;
 
-        if (!url) {
+        const result = await concurrency(() =>
+            auditService.auditWebsite(url)
+        );
 
-            return res.status(400).json({
-                success: false,
-                error: {
-                    code: "URL_REQUIRED",
-                    message: "URL is required"
-                }
-            });
-
-        }
-
-        const result = await auditService.auditWebsite(url);
-
-        return res.json({
+        res.json({
             success: true,
             data: result
         });
 
     } catch (error) {
 
-         const status =
-             error.message === "Request timed out" ? 408 : 500;
+        const status =
+            error.message === "Request timed out" ? 408 : 500;
 
-         return res.status(status).json({
-              success: false,
-              error: {
-                  code:
-                      status === 408
-                          ? "REQUEST_TIMEOUT"
-                          : "AUDIT_FAILED",
-                  message: error.message
-              }
-         });
+        res.status(status).json({
+            success: false,
+            error: {
+                code: status === 408
+                    ? "REQUEST_TIMEOUT"
+                    : "AUDIT_FAILED",
+                message: error.message
+            }
+        });
 
     }
 
