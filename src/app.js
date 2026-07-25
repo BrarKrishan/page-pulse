@@ -1,5 +1,6 @@
 const express = require("express");
-
+const rateLimiter = require("./middleware/rateLimiter");
+const requestId = require("./middleware/requestId");
 const auditRoutes = require("./routes/auditRoutes");
 
 const app = express();
@@ -15,5 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", auditRoutes);
+app.use(rateLimiter);
+app.use(requestId);
 
 module.exports = app;

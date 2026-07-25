@@ -1,9 +1,22 @@
 const axios = require("axios");
+const cache = require("../cache/cache");
 
 const REQUEST_TIMEOUT = 5000;
 
 exports.auditWebsite = async (url) => {
+
+    // Check cache first
+    const cached = cache.get(url);
+
+    if (cached) {
+        return {
+            ...cached,
+            cached: true
+        };
+    }
+
     try {
+
         const start = Date.now();
 
         const response = await axios.get(url, {
@@ -13,13 +26,18 @@ exports.auditWebsite = async (url) => {
 
         const end = Date.now();
 
-        return {
+        const result = {
             url,
             statusCode: response.status,
             responseTime: `${end - start} ms`,
             contentLength: response.headers["content-length"] || "Unknown",
-            contentType: response.headers["content-type"] || "Unknown"
+            contentType: response.headers["content-type"] || "Unknown",
+            cached: false
         };
+
+        cache.set(url, result);
+
+        return result;
 
     } catch (error) {
 
@@ -28,5 +46,7 @@ exports.auditWebsite = async (url) => {
         }
 
         throw error;
+
     }
+
 };

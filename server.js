@@ -1,7 +1,8 @@
 const app = require("./src/app");
+const logger = require("./src/utils/logger");
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Page Pulse API running on port ${PORT}`);
+    logger.info(`Page Pulse API running on port ${PORT}`);
 });
